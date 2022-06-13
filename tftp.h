@@ -37,4 +37,10 @@ struct Data {
     char data[maxData];
 } __attribute__((packed));
 
+struct Eror {
+    short Opcode;
+    short Error_code;
+    char Error_msg[maxData];
+    string terminator;
+} __attribute__((packed));
 #endif //WET3_TFTP_H
