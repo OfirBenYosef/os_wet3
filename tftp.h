@@ -37,7 +37,7 @@ struct Data {
     char data[maxData];
 } __attribute__((packed));
 
-struct Eror {
+struct Error {
     short Opcode;
     short Error_code;
     char Error_msg[maxData];
