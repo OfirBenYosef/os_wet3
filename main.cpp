@@ -197,8 +197,10 @@ int main(int argc, char *argv[]) {
                             exit(1);
                         }
                         exit(1);
+                        cout<<"Error: "<<Error_packet.Error_msg<<","<<Error_packet.Error_code<<endl;
                     }
                     cout<<"here 22"<<endl;
+
                 } while (sel_result == 0 || recvMsgSize == 0);
                 if (Opcode != 3) //We got something else but DATA
                 {
@@ -215,6 +217,7 @@ int main(int argc, char *argv[]) {
                         unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
                         exit(1);
                     }
+                    cout<<"Error: "<<Error_packet.Error_msg<<","<<Error_packet.Error_code<<endl;
                     exit(1);
                 }
 
@@ -232,6 +235,7 @@ int main(int argc, char *argv[]) {
                         unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
                         exit(1);
                     }
+                    cout<<"Error: "<<Error_packet.Error_msg<<","<<Error_packet.Error_code<<endl;
                     //exit(1);
                 }
                 cout<<"here 25"<<endl;
