@@ -25,12 +25,12 @@ int fail_counter;
 using namespace std;
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        cout << "TTFTP_ERROR: incorrect number of args" << endl;//cerr - illigal ars
+        cout << "TTFTP_ERROR: illegal arguments" << endl;
         exit(1);
     }
     cout<<"here 1"<<endl;
     if(atoi(argv[1])< 10000 || atoi(argv[2]) < 0 || atoi(argv[3]) < 0 ){
-        cout << "incorrect  args" << endl;
+        cout << "TTFTP_ERROR: illegal arguments" << endl;
         exit(1);
     }
     //vars
@@ -43,13 +43,11 @@ int main(int argc, char *argv[]) {
     short Opcode;
     short ack_number = 0;
     short block_num = 0;
-    cout<<"here 2"<<endl;
     //setting time struct
     fd_set readfds;
     struct timeval time_val;
     time_val.tv_sec = timeout;
     time_val.tv_usec = 0;
-    cout<<"here 3"<<endl;
     //create socket
     int my_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (my_socket < 0) {
@@ -93,7 +91,8 @@ int main(int argc, char *argv[]) {
         Opcode = ntohs(tmp_WRQ.Opcode);
         char* file_name = tmp_WRQ.file_name;
         char* Tran_mode = tmp_WRQ.Tran_mode;
-        cout<<"here 10"<<endl;
+        cout<<"here 10 sleep"<<endl;
+        sleep(10);
         //check packet parameters:
        if (Opcode != 2 || strcmp(Tran_mode, "octet") != 0 || strlen(file_name) > ECHOMAX) {
             //cout << "FLOWERROR: packet parameters are bad" << endl;
@@ -101,11 +100,14 @@ int main(int argc, char *argv[]) {
        }
         cout<<"here 11"<<endl;
         //open a file for claint
-        int Packet_file = open(file_name, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, S_IRWXU);
+        int Packet_file = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
         if (Packet_file < 0) {
             perror("TTFTP_ERROR: open() failed");
-           // cout << "RECVFAIL" << endl;
-           //todo error exist file already
+            cout<<"here 13"<<endl;
+            exit(1);
+        }
+        if(checkIfFileExists(file_name)){
+            //todo error exist file already
             Error Error_packet;
             Error_packet.Opcode = htons(5);
             Error_packet.Error_code = htons(6);
@@ -117,7 +119,6 @@ int main(int argc, char *argv[]) {
                 unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
                 exit(1);
             }
-            cout<<"here 13"<<endl;
         }
         ACK serv_ack;
         serv_ack.Opcode = htons(4);
