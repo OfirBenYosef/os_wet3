@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
         char* file_name = tmp_WRQ.file_name;
         char* Tran_mode = tmp_WRQ.Tran_mode;
         cout<<"here 10 sleep"<<endl;
-        sleep(10);
+
         //check packet parameters:
        if (Opcode != 2 || strcmp(Tran_mode, "octet") != 0 || strlen(file_name) > ECHOMAX) {
             //cout << "FLOWERROR: packet parameters are bad" << endl;
@@ -100,19 +100,20 @@ int main(int argc, char *argv[]) {
        }
         cout<<"here 11"<<endl;
         //open a file for claint
-        int Packet_file = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
-        if (Packet_file < 0) {
+        int Packet_file = open(file_name, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, S_IRWXU);
+        if (Packet_file < 0 && !(errno == EEXIST)) {
             perror("TTFTP_ERROR: open() failed");
             cout<<"here 13"<<endl;
             exit(1);
         }
-        if(checkIfFileExists(file_name)){
+        else if(Packet_file < 0 && (errno == EEXIST)){
             //todo error exist file already
             Error Error_packet;
             Error_packet.Opcode = htons(5);
             Error_packet.Error_code = htons(6);
             cout<<"here 12"<<endl;
             strcpy(Error_packet.Error_msg, "File already exists");
+            cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
             if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                 perror("TTFTP_ERROR: sendto() failed");
                 close(Packet_file);
