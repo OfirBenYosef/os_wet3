@@ -38,6 +38,7 @@ struct Data {
 } __attribute__((packed));
 
 struct Error {
+    short Opcode;
     short Error_code;
     char Error_msg[maxData];
     char Tran_mode[maxPacket];

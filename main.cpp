@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+
 #include <sys/time.h>
 #include <sys/select.h>
 #include <netinet/in.h>
@@ -24,12 +25,12 @@ int fail_counter;
 using namespace std;
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        cout << "incorrect number of args" << endl;
+        cout << "TTFTP_ERROR: incorrect number of args" << endl;//cerr - illigal ars
         exit(1);
     }
     cout<<"here 1"<<endl;
     if(atoi(argv[1])< 10000 || atoi(argv[2]) < 0 || atoi(argv[3]) < 0 ){
-        cout << "incorrect number of args" << endl;
+        cout << "incorrect  args" << endl;
         exit(1);
     }
     //vars
@@ -100,12 +101,13 @@ int main(int argc, char *argv[]) {
        }
         cout<<"here 11"<<endl;
         //open a file for claint
-        int Packet_file = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
+        int Packet_file = open(file_name, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, S_IRWXU);
         if (Packet_file < 0) {
             perror("TTFTP_ERROR: open() failed");
            // cout << "RECVFAIL" << endl;
            //todo error exist file already
             Error Error_packet;
+            Error_packet.Opcode = htons(5);
             Error_packet.Error_code = htons(6);
             cout<<"here 12"<<endl;
             strcpy(Error_packet.Error_msg, "File already exists");
@@ -176,11 +178,10 @@ int main(int argc, char *argv[]) {
                         if (sendto(my_socket, &serv_ack, sizeof(serv_ack), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                             perror("TTFTP_ERROR: sendto() failed");
                             close(Packet_file);
-                            unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
+                            unlink(&file_name[0]);
                             exit(1);
                         }
                         cout<<"here 20"<<endl;
-                        //cout << "OUT:ACK,"<< ackCounter << endl;
                     }
                     if (fail_counter >= max_num_of_resends)
                     {
@@ -188,16 +189,18 @@ int main(int argc, char *argv[]) {
                         close(Packet_file);
                         unlink(&file_name[0]);
                         Error Error_packet;
+                        Error_packet.Opcode = htons(5);
                         Error_packet.Error_code = htons(0);
                         strcpy(Error_packet.Error_msg, "Abandoning file transmission");
                         if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                             perror("TTFTP_ERROR: sendto() failed");
                             close(Packet_file);
-                            unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
+                            unlink(&file_name[0]);
                             exit(1);
                         }
+                        cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
                         exit(1);
-                        cout<<"Error: "<<Error_packet.Error_msg<<","<<Error_packet.Error_code<<endl;
+
                     }
                     cout<<"here 22"<<endl;
 
@@ -205,6 +208,7 @@ int main(int argc, char *argv[]) {
                 if (Opcode != 3) //We got something else but DATA
                 {
                     Error Error_packet;
+                    Error_packet.Opcode = htons(5);
                     Error_packet.Error_code = htons(4);
                     strcpy(Error_packet.Error_msg, "Unexpected packet");
                     // error packet FATAL ERROR BAIL OUT
@@ -214,28 +218,29 @@ int main(int argc, char *argv[]) {
                     if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                         perror("TTFTP_ERROR: sendto() failed");
                         close(Packet_file);
-                        unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
+                        unlink(&file_name[0]);
                         exit(1);
                     }
-                    cout<<"Error: "<<Error_packet.Error_msg<<","<<Error_packet.Error_code<<endl;
+                    cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
                     exit(1);
                 }
 
-                if (block_num != ack_number + 1) //The incoming block number is not what we have expected, i.e. this is a DATA pkt but the block number in DATA was wrong (not last ACKs block number + 1)
+                if (block_num != ack_number + 1)
                 {
                     cout<<"here 24"<<endl;
                     close(Packet_file);
                     unlink(&file_name[0]);
                     Error Error_packet;
+                    Error_packet.Opcode = htons(5);
                     Error_packet.Error_code = htons(0);
                     strcpy(Error_packet.Error_msg, "Bad block number");
                     if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                         perror("TTFTP_ERROR: sendto() failed");
                         close(Packet_file);
-                        unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
+                        unlink(&file_name[0]);
                         exit(1);
                     }
-                    cout<<"Error: "<<Error_packet.Error_msg<<","<<Error_packet.Error_code<<endl;
+                    cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
                     //exit(1);
                 }
                 cout<<"here 25"<<endl;
@@ -248,8 +253,6 @@ int main(int argc, char *argv[]) {
                 unlink(&file_name[0]);
                 exit(1);
             }
-           // cout << "WRITING: " << lastWriteSize << endl;
-
             cout<<"here 26"<<endl;
             // TODO: send ACK packet to the client
             ack_number++;
@@ -259,10 +262,9 @@ int main(int argc, char *argv[]) {
                 perror("TTFTP_ERROR: sendto() failed");
                 //cout << "RECVFAIL" << endl;
                 close(Packet_file);
-                unlink(&file_name[0]); //deletes a name from the file system. If that name was the last link to a file and no processes have the file open the file is deleted and the space it was using is made available for reuse.
+                unlink(&file_name[0]);
                 exit(1);
             }
-            //cout << "OUT:ACK,"<< ackCounter << endl;
             cout<<"here 27"<<endl;
         } while (recvMsgSize == 516);
         ack_number = 0;
