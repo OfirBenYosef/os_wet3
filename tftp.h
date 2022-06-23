@@ -42,7 +42,7 @@ struct Error {
     short Opcode;
     short Error_code;
     char Error_msg[maxData];
-    char Tran_mode[maxPacket];
+    char Tran_mode[maxPacket] = "0";
 } __attribute__((packed));
 
 bool checkIfFileExists(const char* filename){
