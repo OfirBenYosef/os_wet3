@@ -234,6 +234,17 @@ int main(int argc, char *argv[]) {
 
                     //exit(1);
                 }
+                //  send ACK 1 packet to the client
+                ack_number++;
+                serv_ack.Opcode = htons(4);
+                serv_ack.Block_num = htons(ack_number);
+                if (sendto(my_socket, &serv_ack, sizeof(serv_ack), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
+                    perror("TTFTP_ERROR: sendto() failed");
+                    close(Packet_file);
+                    unlink(&file_name[0]);
+                    exit(1);
+                }
+                cout << "here 15" <<endl;
             } while (false);
             fail_counter = 0;
             int lastWriteSize = write(Packet_file, data, recvMsgSize - 4); // write next bulk of data
@@ -244,7 +255,7 @@ int main(int argc, char *argv[]) {
                 unlink(&file_name[0]);
                 exit(1);
             }
-            // TODO: send ACK packet to the client
+            //  send ACK  2 packet to the client
             ack_number++;
             serv_ack.Opcode = htons(4);
             serv_ack.Block_num = htons(ack_number);
@@ -255,7 +266,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
             cout << "here 15" <<endl;
-        } while (recvMsgSize == 516);
+        } while (recvMsgSize == 1028);
         ack_number = 0;
         close(Packet_file);
     }
