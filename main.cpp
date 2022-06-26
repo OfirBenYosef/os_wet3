@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
         }
         //parse the data resived from recvfrom
         char *curr_ip = inet_ntoa(clnt_addr.sin_addr);
+        cout <<" curr_ip " << endl;
         WRQ tmp_WRQ;
         memcpy(&(tmp_WRQ.Opcode), buffer, 2);
         strcpy(tmp_WRQ.file_name, &(buffer[2]));
