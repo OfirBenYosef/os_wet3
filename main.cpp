@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
         //parse the data resived from recvfrom
+        char *curr_ip = inet_ntoa(clnt_addr.sin_addr);
         WRQ tmp_WRQ;
         memcpy(&(tmp_WRQ.Opcode), buffer, 2);
         strcpy(tmp_WRQ.file_name, &(buffer[2]));
@@ -189,7 +190,6 @@ int main(int argc, char *argv[]) {
                     Error_packet.Error_code = htons(4);
                     strcpy(Error_packet.Error_msg, "Unexpected packet");
                     // error packet FATAL ERROR BAIL OUT
-                    cout<<"here 23"<<endl;
                     close(Packet_file);
                     unlink(&file_name[0]);
                     if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
@@ -204,7 +204,6 @@ int main(int argc, char *argv[]) {
 
                 if (block_num != ack_number + 1)
                 {
-                    cout<<"here 24"<<endl;
                     close(Packet_file);
                     unlink(&file_name[0]);
                     Error Error_packet;
@@ -235,7 +234,6 @@ int main(int argc, char *argv[]) {
             serv_ack.Block_num = htons(ack_number);
             if (sendto(my_socket, &serv_ack, sizeof(serv_ack), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                 perror("TTFTP_ERROR: sendto() failed");
-                //cout << "RECVFAIL" << endl;
                 close(Packet_file);
                 unlink(&file_name[0]);
                 exit(1);
