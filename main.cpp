@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     cout << "here 1" <<endl;
-    if(atoi(argv[1])< 10000 || atoi(argv[2]) < 0 || atoi(argv[3] || argc != 4) < 0 ){
+    if(atoi(argv[1])< 10000 || atoi(argv[2]) < 0 || atoi(argv[3]) < 0 ){
         cout << "TTFTP_ERROR: illegal arguments" << endl;
         exit(1);
     }
@@ -352,8 +352,7 @@ int main(int argc, char *argv[]) {
                 //unlink(&file_name[0]);
                 exit(0);
             }
-            state = _DATA;
-            ack_number = 0;
+
         }
         else if(state == _DATA){
             // for us at the socket (we are waiting for DATA)
@@ -404,9 +403,9 @@ int main(int argc, char *argv[]) {
                     //unlink(file_name);
                     exit(1);
                 }
-                Opcode = ntohs(*((unsigned short*) buffer));
 
             }
+            Opcode = ntohs(*((unsigned short*) buffer));
             if(!the_time_is_out){
                 if (Opcode != state || strcmp(inet_ntoa(clnt_addr.sin_addr),curr_ip) ) //We got something else but DATA
                 {
@@ -435,6 +434,7 @@ int main(int argc, char *argv[]) {
                 memcpy(data, data_res.data, recvMsgSize - 4);
                 Opcode = ntohs(data_res.Opcode);
                 block_num = ntohs(data_res.Block_num);
+                ack_number++;
                 cout <<"block_num: " << block_num << "ack_number: "<< ack_number <<endl;
                 if(block_num != ack_number + 1){
                     cout << "here 12" <<endl;
@@ -482,7 +482,6 @@ int main(int argc, char *argv[]) {
             //unlink(&file_name[0]);
             exit(1);
         }
-        ack_number++;
     }
 
 }
