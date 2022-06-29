@@ -11,5 +11,5 @@ ttftps: $(OBJS)
 main.o: main.cpp tftp.h
 # Cleaning old files before new make
 clean:
-	$(R M) $(TARGET) *.o *~ "#"* core.* ttftps
+	$(RM) $(TARGET) *.o *~ "#"* core.* ttftps
 

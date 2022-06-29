@@ -30,7 +30,6 @@ int main(int argc, char *argv[]) {
         cout << "TTFTP_ERROR: illegal arguments" << endl;
         exit(1);
     }
-    cout << "here 1" <<endl;
     if(atoi(argv[1])< 10000 || atoi(argv[2]) < 0 || atoi(argv[3]) < 0 ){
         cout << "TTFTP_ERROR: illegal arguments" << endl;
         exit(1);
@@ -57,7 +56,6 @@ int main(int argc, char *argv[]) {
         perror("TTFTP_ERROR: socket() failed");
         exit(1);
     }
-    cout << "here 2" <<endl;
     struct sockaddr_in serv_addr;
     struct sockaddr_in clnt_addr;
     //initial out structures
@@ -70,7 +68,6 @@ int main(int argc, char *argv[]) {
         perror("TTFTP_ERROR: bind() failed");
         exit(1);
     }
-    cout << "here 3" <<endl;
     //start transaction
    int state = _WRQ;
     char* file_name;
@@ -95,7 +92,6 @@ int main(int argc, char *argv[]) {
                 Error_packet.Opcode = htons(5);
                 Error_packet.Error_code = htons(7);
                 strcpy(Error_packet.Error_msg, "Unknown user");
-                cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
                 if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                     perror("TTFTP_ERROR: sendto() failed");
                     exit(1);
@@ -111,7 +107,6 @@ int main(int argc, char *argv[]) {
 
             file_name = tmp_WRQ.file_name;
             char* Tran_mode = tmp_WRQ.Tran_mode;
-            cout << "here 4" <<endl;
             //check packet parameters:
             if ( strcmp(Tran_mode, "octet") != 0 || strlen(file_name) > ECHOMAX) {
                 continue;
@@ -129,7 +124,6 @@ int main(int argc, char *argv[]) {
                 Error_packet.Opcode = htons(5);
                 Error_packet.Error_code = htons(6);
                 strcpy(Error_packet.Error_msg, "File already exists");
-                cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
                 if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                     perror("TTFTP_ERROR: sendto() failed");
                     close(Packet_file);
@@ -138,18 +132,8 @@ int main(int argc, char *argv[]) {
                 }
                 continue;
             }
-            cout << "here 5" <<endl;
-           /* ACK serv_ack;
-            serv_ack.Opcode = htons(4);
-            serv_ack.Block_num = htons(ack_number);
-
-            if (sendto(my_socket, &serv_ack, sizeof(serv_ack), 0, (struct sockaddr*) &clnt_addr, sizeof(clnt_addr)) < 0) {
-                perror("TTFTP_ERROR: sendto() failed");
-                close(Packet_file);
-                //unlink(&file_name[0]);
-                exit(0);
-            }*/
             state = _DATA;
+            ack_number = 0;
         }
 
         //-------------------- (( DATA )) --------------------------------------//
@@ -159,7 +143,6 @@ int main(int argc, char *argv[]) {
             time_val.tv_usec = 0;
             FD_ZERO(&readfds);
             FD_SET(my_socket, &readfds);
-            cout << "here 6" <<endl;
             sel_result = select(my_socket + 1, &readfds, nullptr, nullptr, &time_val);
 
             if(sel_result < 0){
@@ -173,14 +156,12 @@ int main(int argc, char *argv[]) {
                 the_time_is_out = true;
                 if (fail_counter >= max_num_of_resends)
                 {
-                    cout << "here 10" <<endl;
                     close(Packet_file);
                     //unlink(&file_name[0]);
                     Error Error_packet;
                     Error_packet.Opcode = htons(5);
                     Error_packet.Error_code = htons(0);
                     strcpy(Error_packet.Error_msg, "Abandoning file transmission");
-                    cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
                     if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                         perror("TTFTP_ERROR: sendto() failed");
                         exit(1);
@@ -189,31 +170,26 @@ int main(int argc, char *argv[]) {
                     continue;
                 }
             }
-            else{
+            else {
                 the_time_is_out = false;
                 client_addr_len = sizeof(clnt_addr);
                 if ((recvMsgSize = recvfrom(my_socket, buffer, ECHOMAX, 0,
-                                            (struct sockaddr*) & clnt_addr, &client_addr_len)) < 0) {
+                                            (struct sockaddr *) &clnt_addr, &client_addr_len)) < 0) {
                     perror("TTFTP_ERROR: recvfrom() failed");
                     close(Packet_file);
                     //unlink(file_name);
                     exit(1);
                 }
-                Opcode = ntohs(*((unsigned short*) buffer));
+                Opcode = ntohs(*((unsigned short *) buffer));
             }
-            cout << "curr ip: " << curr_ip <<" , ip: "<<inet_ntoa(clnt_addr.sin_addr) << endl;
             if(!the_time_is_out){
                 if (Opcode != state || strcmp(inet_ntoa(clnt_addr.sin_addr),curr_ip) ) //We got something else but DATA
                 {
-                    cout << "here 11" <<endl;
                     Error Error_packet;
                     Error_packet.Opcode = htons(5);
                     Error_packet.Error_code = htons(4);
                     strcpy(Error_packet.Error_msg, "Unexpected packet");
-                    cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
                     // error packet FATAL ERROR BAIL OUT
-                    close(Packet_file);
-                    //unlink(&file_name[0]);
                     if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                         perror("TTFTP_ERROR: sendto() failed");
                         close(Packet_file);
@@ -230,17 +206,11 @@ int main(int argc, char *argv[]) {
                 memcpy(data, data_res.data, recvMsgSize - 4);
                 //Opcode = ntohs(data_res.Opcode);
                 block_num = ntohs(data_res.Block_num);
-                ack_number++;
-                cout <<"block_num: " << block_num << "ack_number: "<< ack_number <<endl;
                 if(block_num != ack_number + 1){
-                    cout << "here 12" <<endl;
                     Error Error_packet;
                     Error_packet.Opcode = htons(5);
                     Error_packet.Error_code = htons(0);
                     strcpy(Error_packet.Error_msg, "Bad block number");
-                    cout<<"Error: "<<Error_packet.Error_msg<<","<<ntohs(Error_packet.Error_code)<<endl;
-                    cout << "here 13" <<endl;
-
                     if (sendto(my_socket, &Error_packet, sizeof(Error_packet), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
                         perror("TTFTP_ERROR: sendto() failed");
                         close(Packet_file);
@@ -251,30 +221,32 @@ int main(int argc, char *argv[]) {
                     //unlink(&file_name[0]);
                     continue;
                 }
+                ack_number ++;
                 fail_counter = 0;
                 int lastWriteSize = write(Packet_file, data, recvMsgSize - 4); // write next bulk of data
-                cout << "here 14" <<endl;
                 if (lastWriteSize < 0) {
                     perror("TTFTP_ERROR: write() failed");
                     close(Packet_file);
                     //unlink(&file_name[0]);
                     exit(1);
                 }
-                close(Packet_file);
-                state = _WRQ;
-            }//end !time is out
-             cout << "here 7" <<endl;
+                if (recvMsgSize < ECHOMAX){
+                    state = _WRQ;
+                    close(Packet_file);
+                }
+                else{
+                    state =_DATA;
+                }
+            }//end !time is out;
         }//end Data
 
         //sending another ack
         ACK serv_ack;
         serv_ack.Opcode = htons(4);
         serv_ack.Block_num = htons(ack_number);
-        cout << "here 9" <<endl;
         if (sendto(my_socket, &serv_ack, sizeof(serv_ack), 0, (struct sockaddr*) & clnt_addr, sizeof(clnt_addr)) < 0) {
             perror("TTFTP_ERROR: sendto() failed");
             close(Packet_file);
-            //unlink(&file_name[0]);
             exit(1);
         }
     }
